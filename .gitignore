@@ -1,0 +1,16 @@
+#Cartelle
+/Metasploitable2
+/Metasploitable3
+/Moneybox
+/venv
+
+#Python Cache
+/__pycache__
+
+#File
+cwe_to_capec_named.csv
+capec_latest.xml
+cwe_to_capec.csv
+cwec_v4.12.xml
+known_exploited_vulnerabilities.csv
+.env
