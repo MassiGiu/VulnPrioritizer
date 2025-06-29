@@ -1,5 +1,17 @@
 import csv
-from config import FOLDER, EPSS_FILE, KEV_FILE, KEV_FILE_CSV
+import requests
+from config import FOLDER, EPSS_FILE, KEV_FILE
+
+def download_kev_csv(destination_path):
+    url = "https://www.cisa.gov/sites/default/files/csv/known_exploited_vulnerabilities.csv"
+    print("[↓] Downloading latest KEV catalog from CISA...")
+    response = requests.get(url)
+    response.raise_for_status()
+
+    with open(destination_path, 'wb') as f:
+        f.write(response.content)
+
+    print(f"[✔] KEV file salvato in: {destination_path}")
 
 def load_kev_catalog(kev_file):
     kev_set = set()
@@ -27,12 +39,14 @@ def enrich_with_kev(input_file, kev_file, output_file):
         for row in enriched:
             writer.writerow(row)
 
-    print(f"KEV enrichment completato. File salvato come: {KEV_FILE}")
+    print(f"[✔] KEV enrichment completato. File salvato come: {output_file}")
 
-# Esegui
+# === Esecuzione ===
 if __name__ == "__main__":
+    kev_csv_path = FOLDER / "known_exploited_vulnerabilities.csv"
+    download_kev_csv(kev_csv_path)
+
     input_file = FOLDER / EPSS_FILE
     output_file = FOLDER / KEV_FILE
-    kev_file= KEV_FILE_CSV
 
-    enrich_with_kev(input_file, kev_file, output_file)
+    enrich_with_kev(input_file, kev_csv_path, output_file)
