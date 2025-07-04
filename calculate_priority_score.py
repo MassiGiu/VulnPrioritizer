@@ -30,7 +30,7 @@ def calculate_score(input_file, output_file):
                 # Parsing campi
                 cvss = float(row['cvss']) if row['cvss'] else 0.0
                 epss = float(row['epss']) if row['epss'] else 0.0
-                kev = 1.0 if row['in_kev'].strip().upper() == "YES" else 0.0
+                kev = 1.0 if row['kev'].strip().upper() == "YES" else 0.0
                 recency = compute_recency_score(row['published_date'])
 
                 # Calcolo score
@@ -50,12 +50,12 @@ def calculate_score(input_file, output_file):
         for row in enriched:
             writer.writerow(row)
 
-    print(f"\n✅ File salvato con punteggio: {output_file}")
+    print(f"\n✅ File salvato nella cartella: {output_file}")
 
     # === Stampa tabella riassuntiva (Top 10 score) ===
     enriched_sorted = sorted(enriched, key=lambda x: x['priority_score'], reverse=True)
     table_data = [
-        [row['cve'], row['cvss'], row['epss'], row['in_kev'], row['published_date'], row['priority_score']]
+        [row['cve'], row['cvss'], row['epss'], row['kev'], row['published_date'], row['priority_score']]
         for row in enriched_sorted[:10]
     ]
     headers = ["CVE", "CVSS", "EPSS", "KEV", "Published", "Score"]

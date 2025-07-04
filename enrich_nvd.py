@@ -23,10 +23,8 @@ def get_nvd_data(cve_id):
 
         cve_data = vulnerabilities[0]['cve']
 
-        # === Data pubblicazione ===
         published = cve_data.get("published", "N/A").split("T")[0]
 
-        # === CWE ID ===
         weaknesses = cve_data.get("weaknesses", [])
         if weaknesses and weaknesses[0]["description"]:
             cwe_id = weaknesses[0]["description"][0]["value"]
@@ -36,34 +34,55 @@ def get_nvd_data(cve_id):
         return published, cwe_id
 
     except Exception as e:
-        print(f"[!] Errore per {cve_id}: {e}")
+        print(f"Errore per {cve_id}: {e}")
         return "N/A", "N/A"
 
 def enrich_with_nvd(input_file, output_file):
-    enriched = []
+    # Carica i CVE già processati (se presenti)
+    processed_cves = set()
+    try:
+        with open(output_file, 'r') as f_out:
+            reader = csv.DictReader(f_out)
+            for row in reader:
+                if row.get('published_date') and row.get('published_date') != "N/A":
+                    processed_cves.add(row['cve'])
+        print(f"[ℹ️] Ripreso da {len(processed_cves)} CVE già processati.")
+    except FileNotFoundError:
+        print("[ℹ️] Nessun file di output trovato. Inizio da zero.")
 
+    # Carica output esistente (se presente)
+    enriched = []
+    if processed_cves:
+        with open(output_file, 'r') as f_out:
+            reader = csv.DictReader(f_out)
+            enriched = list(reader)
+
+    # Legge l'input e arricchisce solo i nuovi
     with open(input_file, 'r') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             cve_id = row['cve'].strip()
+            if cve_id in processed_cves:
+                continue
+
             print(f"[NVD] Recupero dati per {cve_id}...")
             published_date, cwe_id = get_nvd_data(cve_id)
-            time.sleep(6)  # Rispetta rate limit NVD
+            time.sleep(6)  # Rate limit consigliato da NVD
 
             row['published_date'] = published_date
             row['cwe_id'] = cwe_id
             enriched.append(row)
 
-    with open(output_file, 'w', newline='') as csvfile:
-        fieldnames = list(enriched[0].keys())
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in enriched:
-            writer.writerow(row)
+            # Salva il file dopo ogni CVE
+            with open(output_file, 'w', newline='') as f_out:
+                fieldnames = list(row.keys())
+                writer = csv.DictWriter(f_out, fieldnames=fieldnames)
+                writer.writeheader()
+                for r in enriched:
+                    writer.writerow(r)
 
-    print(f"\nEnrichment NVD completato. File salvato come: {NVD_FILE}")
+    print(f"\n✅ Enrichment NVD completato. File salvato come: {NVD_FILE}")
 
-# Esecuzione
 if __name__ == "__main__":
     input_file = FOLDER / KEV_FILE
     output_file = FOLDER / NVD_FILE
