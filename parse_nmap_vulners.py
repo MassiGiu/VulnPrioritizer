@@ -56,4 +56,4 @@ with open(OUTPUT_FILE, 'w', newline='') as csvfile:
     for row in results:
         writer.writerow(row)
 
-print(f"\n✅ Parsing completato. Dati salvati in: '{OUTPUT_FILE}'")
+print(f"\nParsing completato. Dati salvati in: '{OUTPUT_FILE}'")

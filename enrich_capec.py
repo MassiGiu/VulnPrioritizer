@@ -25,6 +25,7 @@ def enrich_with_capec(input_file, capec_map, output_file):
             row['capec_name'] = capec['capec_name']
             enriched.append(row)
 
+    # Scrittura file con aggiunta CAPEC
     with open(output_file, 'w', newline='') as f:
         fieldnames = list(enriched[0].keys())
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -37,5 +38,6 @@ def enrich_with_capec(input_file, capec_map, output_file):
 if __name__ == "__main__":
     input_file = FOLDER / NVD_FILE
     output_file = FOLDER / FINAL_FILE
-    capec_map = load_capec_mapping(CAPEC_NAMED_FILE)
+    capec_file = FOLDER / CAPEC_NAMED_FILE
+    capec_map = load_capec_mapping(capec_file)
     enrich_with_capec(input_file, capec_map, output_file)

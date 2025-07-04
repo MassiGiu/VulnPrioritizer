@@ -1,12 +1,34 @@
 import xml.etree.ElementTree as ET
 import csv
-from config import CWETOCAPEC_FILE, CAPEC_FILE, CAPEC_NAMED_FILE
+import requests
+import os
+from config import FOLDER, CWETOCAPEC_FILE, CAPEC_NAMED_FILE
 
-# === Namespace usato nel file CAPEC XML ===
+# === Namespace CAPEC ===
 NS = {'capec': 'http://capec.mitre.org/capec-3'}
 
+# === Download CAPEC ===
+def download_latest_capec(destination_folder=FOLDER, filename="capec_latest.xml"):
+    url = "https://capec.mitre.org/data/xml/capec_latest.xml"
+    destination_folder.mkdir(parents=True, exist_ok=True)
+
+    output_path = destination_folder / filename
+
+    print("...Downloading latest CAPEC XML from MITRE...")
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        with open(output_path, "wb") as f_out:
+            f_out.write(response.content)
+        print(f"File CAPEC salvato in: {output_path}")
+        return output_path
+    except requests.RequestException as e:
+        print(f"Errore durante il download di CAPEC: {e}")
+        return None
+
+# === Load CAPEC Names ===
 def load_capec_names(xml_file):
-    print("[🔍] Estrazione CAPEC_ID → CAPEC_NAME dal file XML...")
+    print("...Estrazione CAPEC_ID → CAPEC_NAME dal file XML...")
     capec_map = {}
     tree = ET.parse(xml_file)
     root = tree.getroot()
@@ -16,11 +38,12 @@ def load_capec_names(xml_file):
         capec_name = pattern.attrib.get("Name", "").strip()
         if capec_id and capec_name:
             capec_map[f"CAPEC-{capec_id}"] = capec_name
-    print(f"[✅] Trovati {len(capec_map)} CAPEC con nome.")
+    print(f"Trovati {len(capec_map)} CAPEC con nome.")
     return capec_map
 
+# === Enrich CSV ===
 def enrich_csv_with_names(input_csv, capec_dict, output_csv):
-    print("[🛠️] Enrichment del file CSV con i nomi CAPEC...")
+    print("Enrichment del file CSV con i nomi CAPEC...")
     enriched = []
 
     with open(input_csv, 'r') as infile:
@@ -40,8 +63,20 @@ def enrich_csv_with_names(input_csv, capec_dict, output_csv):
 
     print(f"File generato: {output_csv}")
 
+
 if __name__ == "__main__":
-    input_file = CWETOCAPEC_FILE
-    output_file = CAPEC_NAMED_FILE
-    capec_dict = load_capec_names(CAPEC_FILE)
-    enrich_csv_with_names(input_file, capec_dict, output_file)
+    capec_file = download_latest_capec()
+
+    if capec_file:
+        input_file = FOLDER / CWETOCAPEC_FILE
+        output_file = FOLDER / CAPEC_NAMED_FILE
+        
+        capec_dict = load_capec_names(capec_file)
+        enrich_csv_with_names(input_file, capec_dict, output_file)
+
+        # === Cancella il file di input ===
+        if os.path.exists(input_file):
+            os.remove(input_file)
+        
+    else:
+        print("Errore: CAPEC XML non disponibile, enrichment interrotto.")
