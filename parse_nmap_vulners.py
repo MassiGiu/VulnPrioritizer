@@ -1,15 +1,18 @@
 import xml.etree.ElementTree as ET
 import re
 import csv
+import shutil
 from config import FOLDER, RAW_FILE, SCAN_FILE
+from pathlib import Path
 
 FOLDER.mkdir(parents=True, exist_ok=True)
 
 # === File input/output ===
 OUTPUT_FILE = FOLDER / RAW_FILE
+SCAN_PATH = Path(SCAN_FILE)  # Assicura che SCAN_FILE sia un Path
 
 # === STEP 2: Carica il file XML ===
-tree = ET.parse(SCAN_FILE)
+tree = ET.parse(SCAN_PATH)
 root = tree.getroot()
 
 results = []
@@ -56,4 +59,11 @@ with open(OUTPUT_FILE, 'w', newline='') as csvfile:
     for row in results:
         writer.writerow(row)
 
-print(f"\nParsing completato. Dati salvati in: '{OUTPUT_FILE}'")
+print(f"\n✅ Parsing completato. Dati salvati in: '{OUTPUT_FILE}'")
+
+# === STEP 6: Sposta lo scan file nella cartella di output ===
+new_scan_path = FOLDER / SCAN_PATH.name
+try:
+    shutil.move(str(SCAN_PATH), str(new_scan_path))
+except Exception as e:
+    print(f"Errore durante lo spostamento del file XML: {e}")

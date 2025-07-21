@@ -1,5 +1,5 @@
 import csv
-from config import FOLDER, NVD_FILE, CAPEC_NAMED_FILE, FINAL_FILE
+from config import FOLDER, NVD_FILE, CAPEC_NAMED_FILE, FULL_ENRICHED_FILE
 
 def load_capec_mapping(filename):
     capec_map = {}
@@ -37,7 +37,7 @@ def enrich_with_capec(input_file, capec_map, output_file):
 
 if __name__ == "__main__":
     input_file = FOLDER / NVD_FILE
-    output_file = FOLDER / FINAL_FILE
+    output_file = FOLDER / FULL_ENRICHED_FILE
     capec_file = FOLDER / CAPEC_NAMED_FILE
     capec_map = load_capec_mapping(capec_file)
     enrich_with_capec(input_file, capec_map, output_file)
