@@ -1,7 +1,7 @@
 import csv
 from datetime import datetime
 from tabulate import tabulate 
-from config import FOLDER, FINAL_FILE, SCORED_FILE
+from config import FOLDER, FULL_ENRICHED_FILE, FINAL_FILE
 
 
 # === Funzione per calcolare il punteggio in base alla data ===
@@ -52,19 +52,40 @@ def calculate_score(input_file, output_file):
 
     print(f"\n✅ File salvato nella cartella: {output_file}")
 
-    # === Stampa tabella riassuntiva (Top 10 score) ===
-    enriched_sorted = sorted(enriched, key=lambda x: x['priority_score'], reverse=True)
+       # === Raggruppa per CVE ===
+    grouped = {}
+    for row in enriched:
+        cve = row['cve']
+        if cve not in grouped:
+            grouped[cve] = {
+                "cvss": row['cvss'],
+                "epss": row['epss'],
+                "kev": row['kev'],
+                "published_date": row['published_date'],
+                "priority_score": row['priority_score'],
+                "ports": set([row['port']])
+            }
+        else:
+            grouped[cve]["ports"].add(row['port'])
+
+    # Ordina per score decrescente
+    top_sorted = sorted(grouped.items(), key=lambda x: float(x[1]['priority_score']), reverse=True)
+
+    # Seleziona le Top 10
     table_data = [
-        [row['cve'], row['cvss'], row['epss'], row['kev'], row['published_date'], row['priority_score']]
-        for row in enriched_sorted[:10]
+        [",".join(sorted(info["ports"])), cve, info["cvss"], info["epss"], info["kev"], info["published_date"], info["priority_score"]]
+        for cve, info in top_sorted[:10]
     ]
-    headers = ["CVE", "CVSS", "EPSS", "KEV", "Published", "Score"]
+
+    # Stampa tabella
+    headers = ["Ports", "CVE", "CVSS", "EPSS", "KEV", "Published", "Score"]
     print("\n📊 Top 10 vulnerabilità prioritarie:")
     print(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
+
 
 # === Esecuzione ===
 if __name__ == "__main__":
     
-    input_file = FOLDER / FINAL_FILE
-    output_file = FOLDER / SCORED_FILE
+    input_file = FOLDER / FULL_ENRICHED_FILE
+    output_file = FOLDER / FINAL_FILE
     calculate_score(input_file, output_file)

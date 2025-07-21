@@ -1,6 +1,6 @@
 import os
 import subprocess
-from config import FOLDER, RAW_FILE, EPSS_FILE, KEV_FILE, NVD_FILE, CWETOCAPEC_FILE, CAPEC_NAMED_FILE, FINAL_FILE, SCORED_FILE
+from config import FOLDER, RAW_FILE, CWETOCAPEC_FILE, CAPEC_NAMED_FILE
 
 def run_script(script_name):
     print(f"\n▶️ Avvio: {script_name}")
@@ -48,5 +48,8 @@ if __name__ == "__main__":
 
     # 7. Calcolo dello score finale
     run_script("calculate_priority_score.py")
+
+    # 8. Ordinamento finale per priority_score
+    run_script("sort_by_priority.py")
 
     print(f"\n✅ Esecuzione completata. Il risultato finale è nella cartella: {FOLDER}")
