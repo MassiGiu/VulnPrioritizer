@@ -49,11 +49,11 @@ The project is intended to support activities such as penetration testing, syste
    ```
 #### Step 2: Run the main
    ```bash
-   python main.py
+   python main.py --scan-file <path_to_nmap_xml> --workdir <output_directory>
    ```
   This will generate the final file vulnerabilities_scored.csv.
 
 #### Step 3: Launch the interactive dashboard
    ```bash
-   streamlit run app.py
+   python -m streamlit run dashboard/app.py -- --csv <path_to_csv>
    ```
