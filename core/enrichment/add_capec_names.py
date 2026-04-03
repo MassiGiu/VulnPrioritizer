@@ -1,11 +1,10 @@
 import csv
 import logging
-from pathlib import Path
-
+import argparse
 import requests
 import xml.etree.ElementTree as ET
 
-from config.config import CAPEC_NAMED_FILE, CWETOCAPEC_FILE, FOLDER
+from pathlib import Path
 
 # ---------------------------------------------------------------------------
 # Configurazione
@@ -27,7 +26,7 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 def download_latest_capec(
-    destination_folder: Path = FOLDER,
+    destination_folder: Path,
     filename: str = CAPEC_XML_FILENAME,
     force: bool = False,
 ) -> Path | None:
@@ -131,9 +130,25 @@ def enrich_csv_with_names(
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    FOLDER.mkdir(parents=True, exist_ok=True)
+    parser = argparse.ArgumentParser(description="Add CAPEC names to CWE-CAPEC mapping")
+    parser.add_argument("--input", required=True, help="CSV input CWE->CAPEC")
+    parser.add_argument("--output", required=True, help="CSV output arricchito")
+    parser.add_argument("--workdir", required=True, help="Directory dove salvare CAPEC XML")
+    parser.add_argument("--force-download", action="store_true")
+    parser.add_argument(
+        "--delete-input-after",
+        action="store_true",
+        help="Rimuove il file input dopo il salvataggio del file output",
+    )
+    args = parser.parse_args()
 
-    capec_xml = download_latest_capec()
+    workdir = Path(args.workdir)
+    workdir.mkdir(parents=True, exist_ok=True)
+
+    capec_xml = download_latest_capec(
+        destination_folder=workdir,
+        force=args.force_download,
+    )
 
     if not capec_xml:
         log.error("CAPEC XML non disponibile, enrichment interrotto.")
@@ -141,13 +156,13 @@ if __name__ == "__main__":
 
     capec_map = load_capec_names(capec_xml)
     enrich_csv_with_names(
-        input_csv=FOLDER / CWETOCAPEC_FILE,
+        input_csv=Path(args.input),
         capec_map=capec_map,
-        output_csv=FOLDER / CAPEC_NAMED_FILE,
+        output_csv=Path(args.output),
     )
 
-    # Rimozione file intermedio SOLO dopo salvataggio confermato
-    intermediate = FOLDER / CWETOCAPEC_FILE
-    if intermediate.exists():
-        intermediate.unlink()
-        log.info("File intermedio rimosso: %s", intermediate)
+    if args.delete_input_after:
+        intermediate = Path(args.input)
+        if intermediate.exists():
+            intermediate.unlink()
+            log.info("File intermedio rimosso: %s", intermediate)

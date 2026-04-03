@@ -2,10 +2,11 @@ import xml.etree.ElementTree as ET
 import re
 import csv
 import shutil
-from pathlib import Path
-from config.config import FOLDER, RAW_FILE, SCAN_FILE
+import argparse
 
-# Compila regex una sola volta
+from pathlib import Path
+from config.config import RAW_FILE
+
 CVE_PATTERN = re.compile(r"(CVE-\d{4}-\d{4,7})\s+([\d.]+)\s+(https?://\S+)")
 
 def parse_nmap_xml(scan_path: Path):
@@ -68,10 +69,16 @@ def move_scan_file(scan_path: Path, destination_folder: Path):
         print(f"[!] Errore durante lo spostamento: {e}")
 
 def main():
-    FOLDER.mkdir(parents=True, exist_ok=True)
+    parser = argparse.ArgumentParser(description="Parse Nmap XML Vulners output")
+    parser.add_argument("--scan-file", required=True, help="Path del file XML Nmap")
+    parser.add_argument("--output-dir", required=True, help="Directory di output")
+    args = parser.parse_args()
 
-    scan_path = Path(SCAN_FILE)
-    output_file = FOLDER / RAW_FILE
+    scan_path = Path(args.scan_file)
+    output_dir = Path(args.output_dir)
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_file = output_dir / RAW_FILE
 
     print("[*] Parsing Nmap XML...")
 
@@ -80,7 +87,7 @@ def main():
 
     print(f"✅ Parsing completato: {output_file}")
 
-    move_scan_file(scan_path, FOLDER)
+    move_scan_file(scan_path, output_dir)
 
 if __name__ == "__main__":
     main()

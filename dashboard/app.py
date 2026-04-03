@@ -1,10 +1,23 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from pathlib import Path
-from config.config import FOLDER, FINAL_FILE
+import sys
 
-CSV_PATH = FOLDER / FINAL_FILE
+from pathlib import Path
+from config.config import FINAL_FILE
+
+def get_csv_path() -> Path:
+    csv_arg = None
+
+    # Streamlit passa args dopo "--"
+    for i, arg in enumerate(sys.argv):
+        if arg == "--csv" and i + 1 < len(sys.argv):
+            csv_arg = sys.argv[i + 1]
+            break
+
+    return Path(csv_arg or FINAL_FILE)
+
+CSV_PATH = get_csv_path()
 
 # ---------------------------------------------------------------------------
 # Page config
@@ -35,7 +48,7 @@ def classify_severity(score: float) -> str:
 
 @st.cache_data
 def load_data():
-    if not Path(CSV_PATH).exists():
+    if not CSV_PATH.exists():
         st.error(f"File non trovato: {CSV_PATH}")
         return pd.DataFrame()
 

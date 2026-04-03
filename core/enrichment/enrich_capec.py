@@ -1,8 +1,8 @@
 import csv
 import logging
-from pathlib import Path
+import argparse
 
-from config.config import FOLDER, NVD_FILE, CAPEC_NAMED_FILE, FULL_ENRICHED_FILE
+from pathlib import Path
 
 # ---------------------------------------------------------------------------
 # Configurazione logging
@@ -124,16 +124,16 @@ def enrich_with_capec(input_file: Path, capec_map: dict[str, dict[str, str]], ou
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    FOLDER.mkdir(parents=True, exist_ok=True)
+    parser = argparse.ArgumentParser(description="Enrich vulnerabilities with CAPEC data")
+    parser.add_argument("--input", required=True, help="CSV input")
+    parser.add_argument("--capec-file", required=True, help="CSV mapping CWE->CAPEC")
+    parser.add_argument("--output", required=True, help="CSV output")
+    args = parser.parse_args()
 
-    input_file = FOLDER / NVD_FILE
-    output_file = FOLDER / FULL_ENRICHED_FILE
-    capec_file = FOLDER / CAPEC_NAMED_FILE
-
-    capec_map = load_capec_mapping(capec_file)
+    capec_map = load_capec_mapping(Path(args.capec_file))
 
     enrich_with_capec(
-        input_file=input_file,
+        input_file=Path(args.input),
         capec_map=capec_map,
-        output_file=output_file,
+        output_file=Path(args.output),
     )

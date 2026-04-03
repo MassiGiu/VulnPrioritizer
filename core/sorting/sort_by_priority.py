@@ -1,8 +1,8 @@
 import csv
 import logging
-from pathlib import Path
+import argparse
 
-from config.config import FOLDER, FINAL_FILE, SORTED_FILE
+from pathlib import Path
 
 # ---------------------------------------------------------------------------
 # Configurazione logging
@@ -84,9 +84,12 @@ def sort_by_priority(input_file: Path, output_file: Path) -> None:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    FOLDER.mkdir(parents=True, exist_ok=True)
+    parser = argparse.ArgumentParser(description="Sort vulnerabilities by priority score")
+    parser.add_argument("--input", required=True, help="CSV input")
+    parser.add_argument("--output", required=True, help="CSV output")
+    args = parser.parse_args()
 
-    input_file = FOLDER / FINAL_FILE
-    output_file = FOLDER / SORTED_FILE
-
-    sort_by_priority(input_file, output_file)
+    sort_by_priority(
+        input_file=Path(args.input),
+        output_file=Path(args.output),
+    )

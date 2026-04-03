@@ -1,11 +1,11 @@
 import csv
 import logging
 import math
+import argparse
+
 from datetime import datetime
 from pathlib import Path
-
 from tabulate import tabulate
-from config.config import FOLDER, FULL_ENRICHED_FILE, FINAL_FILE
 
 # ---------------------------------------------------------------------------
 # Configurazione logging
@@ -45,7 +45,7 @@ def compute_recency_score(pub_date_str: str) -> float:
 
 def compute_priority_score(cvss: float, epss: float, kev: float, recency: float) -> float:
     """
-    Formula migliorata:
+    Formula utilizzata:
     - meno peso al CVSS (teorico)
     - più peso a KEV (exploit reale)
     - aggiunta interazione EPSS*KEV
@@ -61,7 +61,7 @@ def compute_priority_score(cvss: float, epss: float, kev: float, recency: float)
 
 
 def _save_atomic(output_file: Path, rows: list[dict], fieldnames: list[str]) -> None:
-    """Scrittura atomica per sicurezza."""
+    """Scrittura atomica."""
     if not rows:
         log.warning("Nessuna riga da salvare.")
         return
@@ -178,7 +178,7 @@ def calculate_score(input_file: Path, output_file: Path) -> None:
 
     headers = ["Ports", "CVE", "CVSS", "EPSS", "KEV", "Published", "Score"]
 
-    print("\n📊 Top 10 vulnerabilità prioritarie:")
+    print("\n- Top 10 vulnerabilità prioritarie:")
     print(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
 
 
@@ -187,9 +187,12 @@ def calculate_score(input_file: Path, output_file: Path) -> None:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    FOLDER.mkdir(parents=True, exist_ok=True)
+    parser = argparse.ArgumentParser(description="Calculate vulnerability priority score")
+    parser.add_argument("--input", required=True, help="CSV input")
+    parser.add_argument("--output", required=True, help="CSV output")
+    args = parser.parse_args()
 
-    input_file = FOLDER / FULL_ENRICHED_FILE
-    output_file = FOLDER / FINAL_FILE
-
-    calculate_score(input_file, output_file)
+    calculate_score(
+        input_file=Path(args.input),
+        output_file=Path(args.output),
+    )

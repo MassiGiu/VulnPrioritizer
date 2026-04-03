@@ -2,13 +2,13 @@ import csv
 import io
 import logging
 import zipfile
-from pathlib import Path
-from xml.etree.ElementTree import Element
-
 import requests
 import xml.etree.ElementTree as ET
+import argparse
 
-from config.config import CWETOCAPEC_FILE, FOLDER
+from pathlib import Path
+from xml.etree.ElementTree import Element
+from config.config import CWETOCAPEC_FILE
 
 # ---------------------------------------------------------------------------
 # Configurazione
@@ -30,7 +30,7 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 def download_latest_cwe(
-    destination_folder: Path = FOLDER,
+    destination_folder: Path,
     filename: str = CWE_XML_FILENAME,
     force: bool = False,
 ) -> Path | None:
@@ -148,9 +148,20 @@ def save_to_csv(mapping: list[dict[str, str]], output_file: Path) -> None:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    FOLDER.mkdir(parents=True, exist_ok=True)
+    parser = argparse.ArgumentParser(description="Generate CWE to CAPEC mapping")
+    parser.add_argument("--output", required=True, help="CSV output")
+    parser.add_argument("--workdir", required=True, help="Directory dove salvare l'XML CWE")
+    parser.add_argument("--force-download", action="store_true")
+    args = parser.parse_args()
 
-    xml_path = download_latest_cwe()
+    workdir = Path(args.workdir)
+    workdir.mkdir(parents=True, exist_ok=True)
+
+    xml_path = download_latest_cwe(
+        destination_folder=workdir,
+        force=args.force_download,
+    )
+
     if xml_path:
         mapping = parse_cwe_to_capec(xml_path)
-        save_to_csv(mapping, FOLDER / CWETOCAPEC_FILE)
+        save_to_csv(mapping, Path(args.output))

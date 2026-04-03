@@ -1,17 +1,16 @@
 import csv
 import logging
 import time
-from pathlib import Path
-
+import argparse
 import requests
 
-from config.config import EPSS_FILE, FOLDER, RAW_FILE
+from pathlib import Path
 
 # --- Configurazione ---
 API_URL = "https://api.first.org/data/v1/epss"
 REQUEST_DELAY = 0.5
 MAX_RETRIES = 3
-BATCH_SIZE = 100  # L'API EPSS supporta più CVE per richiesta
+BATCH_SIZE = 100
 
 logging.basicConfig(
     level=logging.INFO,
@@ -99,7 +98,7 @@ def save_to_file(output_file: Path, rows: list[dict], fieldnames: list[str]) -> 
         writer.writeheader()
         writer.writerows(rows)
 
-    tmp.replace(output_file)  # operazione atomica sul filesystem
+    tmp.replace(output_file)
 
 
 # ---------------------------------------------------------------------------
@@ -143,7 +142,7 @@ def enrich_with_epss(input_file: Path, output_file: Path) -> None:
                 row["epss"] = scores.get(cve_id, "N/A")
                 enriched.append(row)
 
-            # Salvataggio atomico dopo ogni batch (non dopo ogni singola CVE)
+            # Salvataggio atomico dopo ogni batch
             save_to_file(output_file, enriched, fieldnames)
             time.sleep(REQUEST_DELAY)
 
@@ -151,9 +150,14 @@ def enrich_with_epss(input_file: Path, output_file: Path) -> None:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Enrich vulnerabilities with EPSS")
+    parser.add_argument("--input", required=True, help="CSV input")
+    parser.add_argument("--output", required=True, help="CSV output")
+    args = parser.parse_args()
+
     enrich_with_epss(
-        input_file=Path(FOLDER) / RAW_FILE,
-        output_file=Path(FOLDER) / EPSS_FILE,
+        input_file=Path(args.input),
+        output_file=Path(args.output),
     )
 
     

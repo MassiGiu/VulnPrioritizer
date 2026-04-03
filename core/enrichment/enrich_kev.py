@@ -1,11 +1,10 @@
 import csv
 import logging
+import requests
+import argparse
+
 from pathlib import Path
 from typing import Tuple, List, Dict, Set
-
-import requests
-
-from config.config import EPSS_FILE, FOLDER, KEV_FILE
 
 # ---------------------------------------------------------------------------
 # Configurazione
@@ -166,18 +165,32 @@ def enrich_with_kev(input_file: Path, kev_file: Path, output_file: Path) -> None
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    FOLDER.mkdir(parents=True, exist_ok=True)
+    parser = argparse.ArgumentParser(description="Enrich vulnerabilities with KEV")
+    parser.add_argument("--input", required=True, help="CSV input")
+    parser.add_argument("--output", required=True, help="CSV output")
+    parser.add_argument("--kev-file", required=True, help="Path locale al catalogo KEV CSV")
+    parser.add_argument(
+        "--download-kev",
+        action="store_true",
+        help="Scarica il catalogo KEV se non presente",
+    )
+    args = parser.parse_args()
 
-    kev_csv_path = FOLDER / "known_exploited_vulnerabilities.csv"
+    kev_csv_path = Path(args.kev_file)
+    kev_csv_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Scarica solo se necessario
-    if not kev_csv_path.exists():
+    if args.download_kev and not kev_csv_path.exists():
         download_kev_csv(kev_csv_path)
-    else:
+    elif kev_csv_path.exists():
         log.info("File KEV già presente, skip download.")
+    else:
+        raise FileNotFoundError(
+            f"File KEV non trovato: {kev_csv_path}. "
+            "Usa --download-kev oppure fornisci un file esistente."
+        )
 
     enrich_with_kev(
-        input_file=FOLDER / EPSS_FILE,
+        input_file=Path(args.input),
         kev_file=kev_csv_path,
-        output_file=FOLDER / KEV_FILE,
+        output_file=Path(args.output),
     )

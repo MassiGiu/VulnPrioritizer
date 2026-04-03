@@ -2,13 +2,12 @@ import csv
 import logging
 import os
 import time
+import argparse
+import requests
+
 from pathlib import Path
 from typing import Any
-
-import requests
 from dotenv import load_dotenv
-
-from config.config import FOLDER, KEV_FILE, NVD_FILE
 
 # ---------------------------------------------------------------------------
 # Configurazione
@@ -20,11 +19,11 @@ NVD_API_KEY = os.getenv("NVD_API_KEY")
 NVD_API_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0"
 
 # NVD raccomanda circa:
-# - ~6 secondi senza API key
-# - ~0.6 secondi con API key
+# - 6 secondi senza API key
+# - 0.6 secondi con API key
 REQUEST_DELAY = 0.6 if NVD_API_KEY else 6.0
 MAX_RETRIES = 3
-SAVE_EVERY = 5  # salvataggio atomico ogni N CVE processati
+SAVE_EVERY = 5  # salvataggio ogni N CVE processati
 
 logging.basicConfig(
     level=logging.INFO,
@@ -52,7 +51,7 @@ def _get_headers() -> dict[str, str]:
 # ---------------------------------------------------------------------------
 
 def _extract_cwe_id(cve_data: dict[str, Any]) -> str:
-    """Estrae il primo CWE disponibile in modo robusto."""
+    """Estrae il primo CWE disponibile."""
     weaknesses = cve_data.get("weaknesses", [])
     for weakness in weaknesses:
         descriptions = weakness.get("description", [])
@@ -289,9 +288,12 @@ def enrich_with_nvd(input_file: Path, output_file: Path) -> None:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    FOLDER.mkdir(parents=True, exist_ok=True)
+    parser = argparse.ArgumentParser(description="Enrich vulnerabilities with NVD")
+    parser.add_argument("--input", required=True, help="CSV input")
+    parser.add_argument("--output", required=True, help="CSV output")
+    args = parser.parse_args()
 
     enrich_with_nvd(
-        input_file=FOLDER / KEV_FILE,
-        output_file=FOLDER / NVD_FILE,
+        input_file=Path(args.input),
+        output_file=Path(args.output),
     )
