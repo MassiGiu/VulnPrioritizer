@@ -42,6 +42,10 @@ The project is intended to support activities such as penetration testing, syste
    ```bash
    pip install -r requirements.txt
 
+3. Create a .env file and add your NVD API key:
+   ```bash
+   NVD_API_KEY=your_api_key_here
+
 ## Usage
 #### Step 1: Scan the target with Nmap
    ```bash
